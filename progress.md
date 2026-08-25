@@ -1,0 +1,34 @@
+# Progress
+
+- Started the byte-order and length-safety repair.
+- Created a persistent task plan and captured the initial invariants.
+- Completed source/configuration inspection and selected explicit big-endian header serialization.
+- First `main.c` patch was rejected before writing because it targeted the same file with delete and add operations; switching to a single update patch.
+- Replaced packed-structure serialization with fixed offsets and explicit big-endian read/write helpers.
+- Added pre-allocation checks for payload width, null payloads, `size_t` addition overflow, and CRC API width.
+- Updated the VS Code build task to use `gcc`, C17, warnings, and both `main.c` and `crc_ref.c`.
+- Exact VS Code task command built and ran successfully; sanitizer check is being retried with the option quoted for PowerShell.
+- Functional run passed with big-endian wire bytes and both CRC checks; `git diff --check` passed.
+- MinGW installation lacks AddressSanitizer/UBSan libraries, so sanitizer execution was unavailable.
+- Replaced the raw frame allocation with `protocol_frame_t`, whose final member is the flexible `payload[]` array; CRC16 remains in the allocated trailer after the payload.
+- C17 `-Wall -Wextra -pedantic` compilation and the executable run both passed; the output retained a 9-byte header, 13-byte CRC16 offset, 15-byte total frame, and both CRC checks passed.
+- An additional `-Wconversion` check exposed an existing sign-conversion warning in `crc_ref.c`; it is outside this flexible-array change and does not occur under the project task's warning flags.
+- Started the fixed-pool and generic-list refactor requested for `main.c`.
+- Confirmed that the current pool lifecycle is heap-backed and must be replaced with static caller-owned storage.
+- Replaced `main.c` with a caller-owned static-buffer pool, `pool_init` / `pool_reset`, O(1) allocation and release, and no heap-allocation functions.
+- Added a generic `ListOps` / `ListNode` implementation with readable tail insertion, callback-owned payload cleanup, and separate fixed pools for nodes and integer values.
+- Initial C17 syntax check found only an old-MinGW printf-format warning in the demonstration failure path; changed that output to `%d` before the full build.
+- C17 syntax checks for `main.c` and `main.c + crc_ref.c` passed with no warnings; the fixed-pool executable ran successfully and heap-allocation-call scanning was empty.
+- The environment rejected deletion of the temporary `pool_fixed_test.exe`, including a binary-delete patch attempt, so the executable remains as an untracked test artifact.
+- A focused review identified hardening opportunities in the larger generic API, but the user requested a smaller four-function pool instead; the next edit will intentionally remove that generic/list layer.
+- Replaced the larger implementation with the requested four-function API backed by compile-time static pool instances and max-aligned fixed blocks.
+- C17 `-Wall -Wextra -Werror -pedantic` compilation passed; the executable demonstrated full-pool rejection and reuse after `pool_free`.
+- Confirmed the simplified source contains no calls to `malloc`, `calloc`, `realloc`, or `free`.
+- Added a fixed-capacity `malloc/free` tracker to `main.c`, including source-location macros and an `atexit` report.
+- Verified with GCC `-std=gnu11 -Wall -Wextra`; normal execution reports no active leaks.
+- Focused test verified duplicate-free diagnostics and a leaked block report with the allocation file and line.
+- MinGW's `printf` checker rejected `%zu`; report counters use its `%Iu` spelling so the project build remains warning-free on this toolchain.
+- Started hardening the file-copy example after confirming unterminated failure progress, partial destination retention, same-file truncation, and large-file percentage overflow risks.
+- Added `stat`-based same-file detection, failure-line cleanup, incomplete-destination removal, and `long double` progress arithmetic to `main.c`.
+- `gcc -std=c11 -Wall -Wextra -Werror -pedantic -O2` compilation passed.
+- Regression tests passed for normal copy, empty file, exact same path, hard-link alias, and a 30 MiB file; same-file cases returned failure without changing the source.
