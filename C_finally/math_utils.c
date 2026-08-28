@@ -1,10 +1,10 @@
 #include "math_utils.h"
-#include <stdio.h>
 
-void clamp_int(int *value, int min_val,int max_val)
+void clamp_int(int *value, int min_val, int max_val)
 {
-   *value = MAX(min_val, MIN(*value, max_val));
+    *value = MAX(min_val, MIN(*value, max_val));
 }
+
 int count_digits(int value)
 {
     int digits = 0;
@@ -14,6 +14,5 @@ int count_digits(int value)
         value /= 10;
     } while (value != 0);
 
-    printf("%d\n", digits);
     return digits;
 }
